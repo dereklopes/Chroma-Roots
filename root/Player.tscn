@@ -1,0 +1,211 @@
+[gd_scene load_steps=20 format=3 uid="uid://xpbhai8nlgtx"]
+
+[ext_resource type="Script" path="res://root/Scripts/Player.gd" id="1_ecbsx"]
+[ext_resource type="Texture2D" uid="uid://c3v5jdyj2jl4e" path="res://root/Sprites/MC.png" id="1_qiynj"]
+[ext_resource type="PackedScene" uid="uid://dnabudufp3hnk" path="res://root/Objects/Grapple.tscn" id="3_li6f2"]
+[ext_resource type="Texture2D" uid="uid://hh8pnyjg60nm" path="res://root/Sprites/Player_Concept_3.png" id="4_57jh0"]
+[ext_resource type="Texture2D" uid="uid://dx2cwjqvq1gbj" path="res://root/Sprites/mist.png" id="5_8u1gy"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yj7bn"]
+size = Vector2(21.5, 62)
+
+[sub_resource type="Animation" id="Animation_mul1d"]
+resource_name = "Fall"
+length = 0.3
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [10, 11, 12]
+}
+
+[sub_resource type="Animation" id="Animation_76fpo"]
+resource_name = "Idle"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_58w5b"]
+resource_name = "Jump"
+length = 0.3
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [6, 7, 8]
+}
+
+[sub_resource type="Animation" id="Animation_owew4"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_l0tvd"]
+resource_name = "Run"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [1, 2, 3, 4, 5, 6]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_rqeoy"]
+_data = {
+"Fall": SubResource("Animation_mul1d"),
+"Idle": SubResource("Animation_76fpo"),
+"Jump": SubResource("Animation_58w5b"),
+"RESET": SubResource("Animation_owew4"),
+"Run": SubResource("Animation_l0tvd")
+}
+
+[sub_resource type="Animation" id="Animation_p6pc7"]
+resource_name = "idle"
+length = 1.2
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ConceptSprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+}
+
+[sub_resource type="Animation" id="Animation_0s5w2"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ConceptSprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_vi5uk"]
+_data = {
+"Idle": SubResource("Animation_p6pc7"),
+"RESET": SubResource("Animation_0s5w2")
+}
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_jrhwx"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="Gradient_idbik"]
+offsets = PackedFloat32Array(0, 0.131148, 0.844262, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_m8ks0"]
+gradient = SubResource("Gradient_idbik")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_6kshc"]
+particle_flag_disable_z = true
+particle_flag_damping_as_friction = true
+angle_max = 45.0
+direction = Vector3(0, -1, 0)
+spread = 15.0
+initial_velocity_max = 50.0
+gravity = Vector3(0, 0, 0)
+damping_min = 1.0
+damping_max = 1.0
+scale_min = 0.02
+scale_max = 0.02
+color_ramp = SubResource("GradientTexture1D_m8ks0")
+
+[node name="Player" type="CharacterBody2D"]
+z_index = 1
+collision_mask = 14
+script = ExtResource("1_ecbsx")
+metadata/player = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 15)
+shape = SubResource("RectangleShape2D_yj7bn")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+visible = false
+texture_filter = 1
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("1_qiynj")
+hframes = 7
+vframes = 2
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_rqeoy")
+}
+
+[node name="Grapple" parent="." instance=ExtResource("3_li6f2")]
+
+[node name="ConceptSprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("4_57jh0")
+offset = Vector2(0, 14)
+hframes = 12
+
+[node name="ConceptAnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_vi5uk")
+}
+autoplay = "Idle"
+
+[node name="MistParticles2D" type="GPUParticles2D" parent="."]
+visible = false
+material = SubResource("CanvasItemMaterial_jrhwx")
+position = Vector2(0, 39)
+amount = 10
+process_material = SubResource("ParticleProcessMaterial_6kshc")
+texture = ExtResource("5_8u1gy")
+lifetime = 5.0
+preprocess = 15.0
+speed_scale = 0.5
+randomness = 0.25
+local_coords = true
