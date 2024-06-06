@@ -2,10 +2,11 @@
 extends CharacterBody2D
 
 @onready var grapple: Grapple = $Grapple
-@onready var animation_player: AnimationPlayer = $ConceptAnimationPlayer
-@onready var sprite: Sprite2D = $ConceptSprite2D
+@onready var animation_player: AnimationPlayer = $AnimationPlayer
+@onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape_2d: CollisionShape2D = $CollisionShape2D
 @onready var mist_particles_2d: GPUParticles2D = $MistParticles2D
+@onready var ice_clone_scene: PackedScene = preload("res://root/Objects/IceClone.tscn")
 
 const JUMP_FORCE = 500			# Force applied on jumping
 const MOVE_SPEED = 500			# Speed to walk with
@@ -15,7 +16,6 @@ const FRICTION_GROUND = 0.85	# The friction while on the ground
 const CHAIN_PULL = 0            # The force applied to pull the player towards the grapple point
 const MIST_SLOW = Vector2(0.1, 0.9)
 const MIST_LIFT = 150
-
 
 var gravity: int = ProjectSettings.get_setting("physics/2d/default_gravity")
 var animation: String
@@ -56,6 +56,19 @@ func _physics_process(delta: float) -> void:
 		# TODO: Fix collision issues with floor
 		global_position = grapple.rigid_body_2d.global_position
 		velocity = grapple.rigid_body_2d.linear_velocity
+
+	if Input.is_action_just_pressed("power_3") and !is_mist:
+		# Bump the player forward a bit
+		# velocity.x = 500 * (1 if sprite.flip_h else -1)
+		var clone = ice_clone_scene.instantiate()
+		clone.global_position = global_position
+		var clone_sprite: Sprite2D = sprite.duplicate()
+		clone_sprite.modulate = Color(0, 0.5, 1)
+		clone.add_child(clone_sprite)
+		var clone_animation_player: AnimationPlayer = animation_player.duplicate()
+		clone_animation_player.speed_scale = 0
+		clone.add_child(animation_player.duplicate())
+		get_parent().add_child(clone)
 
 	if Input.is_action_pressed("power_1") and grapple.can_hook:
 		grapple.set_hook()
@@ -161,3 +174,8 @@ func on_enter():
 
 func set_is_in_mist(value: bool):
 	is_in_mist = value
+
+
+func _on_despawn_timer_timeout():
+	print("Shadow despawned!")
+	queue_free()

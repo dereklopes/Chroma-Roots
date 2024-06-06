@@ -162,7 +162,7 @@ color_ramp = SubResource("GradientTexture1D_m8ks0")
 
 [node name="Player" type="CharacterBody2D"]
 z_index = 1
-collision_mask = 14
+collision_mask = 30
 script = ExtResource("1_ecbsx")
 metadata/player = true
 
@@ -171,7 +171,6 @@ position = Vector2(0, 15)
 shape = SubResource("RectangleShape2D_yj7bn")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-visible = false
 texture_filter = 1
 scale = Vector2(1.5, 1.5)
 texture = ExtResource("1_qiynj")
@@ -186,6 +185,7 @@ libraries = {
 [node name="Grapple" parent="." instance=ExtResource("3_li6f2")]
 
 [node name="ConceptSprite2D" type="Sprite2D" parent="."]
+visible = false
 texture_filter = 1
 texture = ExtResource("4_57jh0")
 offset = Vector2(0, 14)
