@@ -1,7 +1,7 @@
 @tool
 ## Resource that defines the cell appearance.
 ##
-## MapTheme is assigned in MetSys Settings and defines the cell appearance when using [method MetroidvaniaSystem.draw_cell]. It has a few subtypes: shape can be either square or rectangular and borders can be either shared or not. Some properties are only available for certain theme subtypes. Check the Map Theme section in README for some more detailed information.
+## MapTheme is assigned in MetSys Settings and defines the cell appearance when using [MapView]. It has a few subtypes: shape can be either square or rectangular and borders can be either shared or not. Some properties are only available for certain theme subtypes. Check the Map Theme section in README for some more detailed information.
 extends Resource
 class_name MapTheme
 
@@ -135,6 +135,12 @@ func is_unicorner() -> bool:
 		return l_corner == u_corner and t_corner == u_corner and cross_corner == u_corner
 	else:
 		return inner_corner == outer_corner
+
+func is_nocorner():
+	if use_shared_borders:
+		return l_corner == null and is_unicorner()
+	else:
+		return inner_corner == null and outer_corner == null
 
 func check_for_changes(prev_state: Array) -> Array[String]:
 	var new_state: Array

@@ -11,6 +11,7 @@ var had_undo_change: bool
 var use_cursor := true
 var room_only_cursor := true
 var overlay_mode: bool
+var update_neighbors: bool
 
 var drag_from: Vector2i = Vector2i.MAX
 var highlighted_room: Array[Vector3i]
@@ -115,9 +116,6 @@ func get_cell_at_cursor() -> MetroidvaniaSystem.MapData.CellData:
 func mark_modified():
 	editor.plugin.modified = true
 
-func redraw_map():
-	editor.map.queue_redraw()
-
 func redraw_overlay():
 	editor.map_overlay.queue_redraw()
 
@@ -168,6 +166,8 @@ func undo_handle_transfer(from_coords: Vector3i, to_coords: Vector3i):
 	
 	editor.undo_redo.add_do_method(MetSys.map_data.transfer_cell.bind(from_coords, to_coords))
 	editor.undo_redo.add_undo_method(MetSys.map_data.transfer_cell.bind(to_coords, from_coords))
+	undo_handle_cell_redraw(from_coords)
+	undo_handle_cell_redraw(to_coords)
 	
 	had_undo_change = true
 
@@ -187,20 +187,24 @@ func undo_handle_group_remove(coords: Vector3i, group_id: int):
 	editor.undo_redo.add_undo_method(func(): MetSys.map_data.cell_groups[group_id].append(coords))
 	had_undo_change = true
 
-func undo_handle_element_add(coords: Vector3i, element: Dictionary):
+func undo_handle_element_add(coords: Vector3i, element: MetroidvaniaSystem.MapData.CustomElement):
 	if not undo_active:
 		undo_begin()
 	
 	editor.undo_redo.add_do_method(func(): MetSys.map_data.custom_elements[coords] = element)
 	editor.undo_redo.add_undo_method(func(): MetSys.map_data.custom_elements.erase(coords))
+	editor.undo_redo.add_do_method(func(): editor.current_map_view.update_custom_element_at(coords))
+	editor.undo_redo.add_undo_method(func(): editor.current_map_view.update_custom_element_at(coords))
 	had_undo_change = true
 
-func undo_handle_element_remove(coords: Vector3i, element: Dictionary):
+func undo_handle_element_remove(coords: Vector3i, element: MetroidvaniaSystem.MapData.CustomElement):
 	if not undo_active:
 		undo_begin()
 	
 	editor.undo_redo.add_do_method(func(): MetSys.map_data.custom_elements.erase(coords))
 	editor.undo_redo.add_undo_method(func(): MetSys.map_data.custom_elements[coords] = element)
+	editor.undo_redo.add_do_method(func(): editor.current_map_view.update_custom_element_at(coords))
+	editor.undo_redo.add_undo_method(func(): editor.current_map_view.update_custom_element_at(coords))
 	had_undo_change = true
 
 func undo_handle_scene_add(room: Array[Vector3i], old_scene: String, undo_only := false):
@@ -257,10 +261,15 @@ func undo_end_with_redraw():
 	if had_undo_change:
 		editor.undo_redo.add_do_method(redraw_overlay_if_needed)
 		editor.undo_redo.add_undo_method(redraw_overlay_if_needed)
-		if not overlay_mode:
-			editor.undo_redo.add_do_method(redraw_map)
-			editor.undo_redo.add_undo_method(redraw_map)
 	undo_end()
+
+func undo_handle_cell_redraw(coords: Vector3i):
+	editor.undo_redo.add_do_method(editor.update_cell)
+	editor.undo_redo.add_undo_method(editor.update_cell)
+
+func undo_handle_rect_redraw(rect: Rect2i):
+	editor.undo_redo.add_do_method(editor.update_rect)
+	editor.undo_redo.add_undo_method(editor.update_rect)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED:

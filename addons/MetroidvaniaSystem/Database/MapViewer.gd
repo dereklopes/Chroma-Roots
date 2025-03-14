@@ -1,5 +1,5 @@
 @tool
-extends "res://addons/MetroidvaniaSystem/Scripts/MapView.gd"
+extends "res://addons/MetroidvaniaSystem/Scripts/EditorMapView.gd"
 
 enum {MODE_LAYOUT = 1, MODE_ROOM_SYMBOL, MODE_ROOM_COLOR, MODE_ROOM_GROUP, MODE_BORDER_TYPE, MODE_BORDER_COLOR, MODE_MAP}
 
@@ -27,6 +27,10 @@ func _notification(what: int) -> void:
 		theme_cache.cursor_color = get_theme_color(&"cursor_color", &"MetSys")
 		theme_cache.room_not_assigned = get_theme_color(&"room_not_assigned", &"MetSys")
 		theme_cache.room_assigned = get_theme_color(&"room_assigned", &"MetSys")
+
+func setup_new_layer(layer: MapView):
+	layer._force_mapped = %MappedCheckbox.button_pressed
+	layer._update_all_with_mapped.call_deferred()
 
 func _on_item_hover(item: Control):
 	item.mouse_exited.connect(_on_item_unhover.bind(item))
@@ -65,7 +69,6 @@ func _on_overlay_draw() -> void:
 	if not plugin:
 		return
 	
-	super()
 	var mouse := get_cursor_pos()
 	
 	if cursor_inside:
@@ -97,5 +100,6 @@ func _on_overlay_draw() -> void:
 		extra_draw.call(map_overlay)
 
 func toggle_mapped(toggled_on: bool) -> void:
-	force_mapped = toggled_on
-	map.queue_redraw()
+	for map_view: MapView in layers.values():
+		map_view._force_mapped = toggled_on
+		map_view._update_all_with_mapped()

@@ -23,7 +23,7 @@ func _ready():
 func _process(delta):
 	super._process(delta)
 	if !is_hooked:
-		if collision_path.is_colliding() and collision_path.get_collider() is TileMap:
+		if collision_path.is_colliding() and collision_path.get_collider() is TileMapLayer:
 			hook_point = collision_path.get_collision_point()
 			can_hook = true
 		else:

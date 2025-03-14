@@ -69,15 +69,19 @@ func paint(mode: int):
 			continue
 		
 		if modify_cell(cell_data, mode) or modify_coords(coords, mode):
+			if update_neighbors:
+				var rect := Rect2i(Vector2i(coords.x, coords.y), Vector2i.ONE).grow(1)
+				editor.current_map_view.update_rect(rect)
+				undo_handle_rect_redraw(rect)
+			else:
+				editor.current_map_view.update_cell(coords)
+				undo_handle_cell_redraw(coords)
 			modified = true
 	
 	undo_end_with_redraw()
 	
-	if modified:
-		if overlay_mode:
-			redraw_overlay()
-		else:
-			redraw_map()
+	if modified and overlay_mode:
+		redraw_overlay()
 
 func modify_cell(cell_data: MetroidvaniaSystem.MapData.CellData, mode: int) -> bool:
 	return false

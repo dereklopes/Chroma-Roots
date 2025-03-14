@@ -1,170 +1,301 @@
-extends Control
+## Displays a portion of the map on a [CanvasItem].
+##
+## [MapView] is a low-level interface for displaying map data. It's very optimized, capable of drawing large maps and update them partially. This is an advanced feature, for basic needs consider using Minimap.tscn.
+class_name MapView extends RefCounted
 
-@onready var map_view: Control = $MapView
-@onready var map_overlay: Control = %OverlayLayer
-@onready var map: Control = %Map
-@onready var current_layer_spinbox: SpinBox = %CurrentLayer
-@onready var status_label: Label = %StatusLabel
-@onready var zoom_slider: HSlider = %ZoomSlider
-@onready var zoom_value_label: Label = %ZoomValue
+const CellView = MetroidvaniaSystem.CellView
+const CustomElement = MetroidvaniaSystem.MapData.CustomElement
+const _SURROUND = [Vector3i(-1, -1, 0), Vector3i(0, -1, 0), Vector3i(1, -1, 0), Vector3i(-1, 0, 0), Vector3i(1, 0, 0), Vector3i(-1, 1, 0), Vector3i(0, 1, 0), Vector3i(1, 1, 0)]
 
-var plugin: EditorPlugin
+## Coordinates of the top-left corner of the displayed area. Changing this value will internally call [method move] and only update edge cells whenever possible.
+var begin: Vector2i:
+	set(b):
+		if _begin == Vector2i.MAX:
+			_begin = b
+		elif b != _begin:
+			move(b - begin)
+	get:
+		return _begin
 
-var view_drag: Vector4
-var map_offset := Vector2i(10, 10)
-var skip_cells: Array[Vector3i]
+## Size of the displayed area, in cells. Changing this value after the map is initialized will not work properly until you call [method recreate_cache].
+var size: Vector2i
 
-var current_layer: int
-var force_mapped: bool
-var cursor_inside: bool
+## The currently displayed layer. Changing this value will update all displayed cells.
+var layer: int:
+	set(l):
+		if _layer < 0:
+			_layer = l
+		elif l != layer:
+			move(Vector2i(), l)
+			_layer = l
+	get:
+		return _layer
 
-func _enter_tree() -> void:
-	if owner:
-		plugin = owner.plugin
+var _begin: Vector2i = Vector2i.MAX
+var _layer: int = -1
 
-func _ready() -> void:
-	$Sidebar.custom_minimum_size.x = 200 * EditorInterface.get_editor_scale()
-	
-	map.draw.connect(_on_map_draw)
-	map_overlay.mouse_exited.connect(status_label.hide)
-	map_overlay.gui_input.connect(_on_overlay_input)
-	map_overlay.draw.connect(_on_overlay_draw)
-	
-	current_layer_spinbox.value_changed.connect(on_layer_changed)
-	%RecenterButton.pressed.connect(on_recenter_view)
-	zoom_slider.value_changed.connect(on_zoom_changed)
-	
-	map_view.mouse_entered.connect(func():
-		cursor_inside = true
-		map_overlay.queue_redraw())
-	
-	map_view.mouse_exited.connect(func():
-		cursor_inside = false
-		map_overlay.queue_redraw())
-	
-	status_label.hide()
-	await get_tree().process_frame
-	update_map_position()
-	map.size = MetSys.CELL_SIZE * 200
-	
-	var refresh := func():
-		update_map_position()
-		on_layer_changed(current_layer)
-	
-	MetSys.settings.theme_changed.connect(refresh)
-	MetSys.theme_modified.connect(refresh.unbind(1))
+## If [code]true[/code], empty and undiscovered cells will not appear on map. Has no effect if [MapTheme.empty_space_texture] is not defined, as the cells won't display anyway.
+var skip_empty: bool
 
-func get_cursor_pos() -> Vector2i:
-	var pos := (map_overlay.get_local_mouse_position() - MetSys.CELL_SIZE / 2).snapped(MetSys.CELL_SIZE) / MetSys.CELL_SIZE as Vector2i - map_offset
-	return pos
+## If [code]true[/code], cells won't be updated immediately when calling update methods. Instead the update will be queued and done in a batch at the end of the frame. It's especially useful to avoid duplicate updates.
+var queue_updates: bool
+#var threaded: bool
 
-func on_layer_changed(l: int):
-	current_layer = l
-	map.queue_redraw()
-	map_overlay.queue_redraw()
+## Whether the map should be visible or not. You can also set visibility of the parent [CanvasItem].
+var visible: bool:
+	set(v):
+		visible = v
+		RenderingServer.canvas_item_set_visible(_canvas_item, visible)
 
-func on_recenter_view() -> void:
-	map_offset = Vector2i(10, 10)
-	map_overlay.queue_redraw()
-	update_map_position()
+var _canvas_item: RID
+var _cache: Dictionary#[Vector3i, CellView]
+var _custom_elements_cache: Dictionary#[Vector3i, CustomElementInstance]
+var _update_queue: Array[RefCounted]
 
-func on_zoom_changed(new_zoom: float):
-	zoom_value_label.text = "x%0.1f" % new_zoom
-	var new_zoom_vector := Vector2.ONE * new_zoom
-	map_overlay.scale = new_zoom_vector
-	map.scale = new_zoom_vector
-	update_map_position()
+var _force_mapped: bool
 
-func _on_overlay_input(event: InputEvent) -> void:
-	if event is InputEventMouseMotion:
-		if view_drag != Vector4():
-			if event.position.x >= map_overlay.size.x:
-				map_view.warp_mouse(Vector2(event.position.x - map_overlay.size.x, event.position.y))
-				view_drag.x -= map_overlay.size.x
-			elif event.position.x < 0:
-				map_view.warp_mouse(Vector2(map_overlay.size.x + event.position.x, event.position.y))
-				view_drag.x += map_overlay.size.x
-			
-			if event.position.y >= map_overlay.size.y:
-				map_view.warp_mouse(Vector2(event.position.x, event.position.y - map_overlay.size.y))
-				view_drag.y -= map_overlay.size.y
-			elif event.position.y < 0:
-				map_view.warp_mouse(Vector2(event.position.x, map_overlay.size.y + event.position.y))
-				view_drag.y += map_overlay.size.y
-			
-			map_offset = Vector2(view_drag.z, view_drag.w) + (map_overlay.get_local_mouse_position() - Vector2(view_drag.x, view_drag.y)) / MetSys.CELL_SIZE
-			update_map_position()
-			map_overlay.queue_redraw()
-			_on_drag()
-		else:
-			map_overlay.queue_redraw()
-		
-		_update_status_label()
-	
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_MIDDLE:
-			if event.pressed:
-				view_drag.x = map_overlay.get_local_mouse_position().x
-				view_drag.y = map_overlay.get_local_mouse_position().y
-				view_drag.z = map_offset.x
-				view_drag.w = map_offset.y
-			else:
-				view_drag = Vector4()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			if event.pressed and event.is_command_or_control_pressed():
-				zoom_slider.value += zoom_slider.step * (-1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else 1)
-
-func _on_drag():
-	pass
-
-func _update_status_label():
-	status_label.show()
-	status_label.text = str(get_cursor_pos())
-
-func _unhandled_key_input(event: InputEvent) -> void:
-	if not visible:
-		return
-	
-	if event is InputEventKey and event.pressed:
-		if event.physical_keycode == KEY_Q:
-			current_layer_spinbox.value -= 1
-			accept_event()
-		elif event.physical_keycode == KEY_E:
-			current_layer_spinbox.value += 1
-			accept_event()
+func _init(parent_item: RID) -> void:
+	_canvas_item = RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(_canvas_item, parent_item)
+	recreate_cache.call_deferred()
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_THEME_CHANGED:
-		if map_overlay:
-			map_overlay.queue_redraw()
+	if what == NOTIFICATION_PREDELETE:
+		RenderingServer.free_rid(_canvas_item)
 
-func _on_map_draw() -> void:
-	if not plugin:
+## Discards all cached cells and initializes the whole map again. This method can update cell coordinates and map size, but it's rarely needed to be called manually.
+func recreate_cache():
+	_cache.clear()
+	_custom_elements_cache.clear()
+	var shared_borders: bool = MetSys.settings.theme.use_shared_borders
+	
+	var prev_row: Array[CellView]
+	for y in size.y:
+		var current_row: Array[CellView]
+		current_row.resize(size.x)
+		
+		for x in size.x:
+			var coords := Vector3i(begin.x + x, begin.y + y, layer)
+			var cell := CellView.new(_canvas_item)
+			cell.coords = coords
+			cell.offset = Vector2(x, y)
+			_cache[coords] = cell
+			current_row[x] = cell
+			
+			if shared_borders:
+				if x > 0:
+					cell._left_cell = current_row[x - 1]
+				if y > 0:
+					cell._top_cell = prev_row[x]
+				if x > 0 and y > 0:
+					cell._top_left_cell = prev_row[x - 1]
+		
+		prev_row = current_row
+	
+	var rect := Rect2i(begin, size)
+	var element_manager: MetroidvaniaSystem.CustomElementManager = MetSys.settings.custom_elements
+	var element_list: Dictionary = MetSys.map_data.custom_elements
+	
+	for coords in element_list:
+		if coords.z != layer:
+			continue
+		
+		var element: CustomElement = element_list[coords]
+		var element_rect := Rect2i(coords.x, coords.y, element["size"].x, element["size"].y)
+		if not element_rect.intersects(rect):
+			continue
+		
+		_make_custom_element_instance(coords, element)
+	
+	var was_queue := queue_updates
+	queue_updates = false
+	update_all()
+	queue_updates = was_queue
+
+## Moves the [member begin] by the given offset. If the new map area intersects with the previous one, only the newly displayed cells will be redrawn. However if you change the layer, all cells will be updated.
+func move(offset: Vector2i, new_layer := layer):
+	_begin += offset
+	
+	if new_layer != layer:
+		_layer = new_layer
+		recreate_cache()
+		return
+	elif offset == Vector2i():
 		return
 	
-	MetroidvaniaSystem.RoomDrawer.force_mapped = force_mapped
-	for x in range(-100, 100):
-		for y in range(-100, 100):
-			var coords := Vector3i(x, y, current_layer)
-			if coords in skip_cells:
-				continue
+	var shared_borders: bool = MetSys.settings.theme.use_shared_borders
+	var new_cache: Dictionary#[Vector3i, CellView]
+	for y in size.y:
+		for x in size.x:
+			var coords := Vector3i(begin.x + x, begin.y + y, layer)
+			var cell: CellView = _cache.get(coords)
+			if not cell:
+				cell = CellView.new(_canvas_item)
+				cell.coords = coords
+				cell.update()
 			
-			MetSys.draw_cell(map, Vector2i(x, y) + Vector2i(100, 100), coords, true, false)
+			cell.offset = Vector2(x, y)
+			new_cache[coords] = cell
+			
+			if shared_borders:
+				if x > 0:
+					cell._left_cell = new_cache[coords + Vector3i(-1, 0, 0)]
+				else:
+					cell._left_cell = null
+				
+				if y > 0:
+					cell._top_cell = new_cache[coords + Vector3i(0, -1, 0)]
+				else:
+					cell._top_cell = null
+				
+				if x > 0 and y > 0:
+					cell._top_left_cell = new_cache[coords + Vector3i(-1, -1, 0)]
+				else:
+					cell._top_left_cell = null
 	
-	if MetSys.settings.theme.use_shared_borders:
-		MetSys.draw_shared_borders()
+	var rect := Rect2i(_begin, size)
+	var element_manager: MetroidvaniaSystem.CustomElementManager = MetSys.settings.custom_elements
+	var element_list: Dictionary = MetSys.map_data.custom_elements
 	
-	MetroidvaniaSystem.RoomDrawer.force_mapped = false
-
-func _on_overlay_draw() -> void:
-	MetSys.draw_custom_elements(map_overlay, Rect2i(-map_offset, map_overlay.size / MetSys.CELL_SIZE + Vector2.ONE), Vector2(), current_layer)
-
-func update_map_position():
-	map.position = Vector2(map_offset - Vector2i(100, 100)) * MetSys.CELL_SIZE * map.scale
-
-func get_assigned_scene_display(assigned_scene: String) -> String:
-	if assigned_scene.begins_with(":"):
-		var uid := assigned_scene.replace(":", "uid://")
-		assigned_scene = "%s (%s)" % [ResourceUID.get_id_path(ResourceUID.text_to_id(uid)).trim_prefix(MetSys.settings.map_root_folder), uid]
+	var element_offset: Vector2 = Vector2(offset) * MetSys.CELL_SIZE
+	for coords in _custom_elements_cache.keys():
+		var element: CustomElementInstance = _custom_elements_cache[coords]
+		var element_rect := Rect2i(coords.x, coords.y, element.base_element.size.x, element.base_element.size.y)
+		
+		if element_rect.intersects(rect):
+			element.offset -= element_offset
+			element.update()
+		else:
+			_custom_elements_cache.erase(coords)
 	
-	return assigned_scene
+	for coords in element_list:
+		if coords.z != layer:
+			continue
+		
+		if coords in _custom_elements_cache:
+			continue
+		
+		var element: CustomElement = element_list[coords]
+		var element_rect := Rect2i(coords.x, coords.y, element["size"].x, element["size"].y)
+		if not element_rect.intersects(rect):
+			continue
+		
+		_make_custom_element_instance(coords, element).update()
+	
+	_cache = new_cache
+
+## Same as [method move], but moves to absolute coordinates instead of by offset.
+func move_to(coords: Vector3i):
+	move(Vector2i(coords.x, coords.y) - _begin, coords.z)
+
+func _make_custom_element_instance(coords: Vector3i, element: CustomElement) -> CustomElementInstance:
+	var element_instance := CustomElementInstance.new(_canvas_item)
+	element_instance.coords = coords
+	element_instance.offset = Vector2(-begin + Vector2i(coords.x, coords.y)) * MetSys.CELL_SIZE
+	element_instance.base_element = element
+	_custom_elements_cache[coords] = element_instance
+	return element_instance
+
+## Updates all currently visible cells. This will only refresh their state (symbols, colors etc.), while keeping the current coordinates. It's recommended to call this when [signal MetroidvaniaSystem.map_updated] is received (the [MapView] does not do it automatically).
+func update_all():
+	for cell: CellView in _cache.values():
+		_update_cell(cell)
+	for element: CustomElementInstance in _custom_elements_cache.values():
+		_update_element(element)
+	
+	RenderingServer.canvas_item_clear(_canvas_item)
+	if skip_empty:
+		return
+	
+	var empty_texture: Texture2D = MetSys.settings.theme.empty_space_texture
+	
+	if empty_texture:
+		var texture_rid := empty_texture.get_rid()
+		var texture_size := empty_texture.get_size()
+		for y in size.y:
+			for x in size.x:
+				RenderingServer.canvas_item_add_texture_rect(_canvas_item, Rect2(Vector2(x, y) * MetSys.CELL_SIZE, texture_size), texture_rid)
+
+## Updates a specific cell. Prints error if no cell with the given [param coords] is visible. See also [method update_all].
+func update_cell(coords: Vector3i):
+	var exists: bool
+	
+	var cell: CellView = _cache.get(coords)
+	if cell:
+		_update_cell(cell)
+		if MetSys.settings.theme.use_shared_borders:
+			for delta in _SURROUND:
+				var cell2: CellView = _cache.get(coords + delta)
+				if cell2:
+					_update_cell(cell2)
+		
+		exists = true
+	
+	var custom_element = _custom_elements_cache.get(coords)
+	if custom_element:
+		_update_element(custom_element)
+		exists = true
+	
+	if not exists:
+		push_error("MapView has no cell nor custom element at %s" % coords)
+
+## Updates all cells inside the given rect. Prints errors if the rect goes outside bounds of the [MapView]. See also [method update_all].
+func update_rect(rect: Rect2i):
+	for y in rect.size.y:
+		for x in rect.size.x:
+			update_cell(Vector3i(rect.position.x + x, rect.position.y + y, layer))
+
+func _update_cell(cell: CellView):
+	if not queue_updates:
+		cell.update()
+		return
+	
+	if _update_queue.is_empty():
+		_update_queued.call_deferred()
+	
+	if not cell in _update_queue:
+		_update_queue.append(cell)
+
+func _update_element(element: CustomElementInstance):
+	if not queue_updates:
+		element.update()
+		return
+	
+	if _update_queue.is_empty():
+		_update_queued.call_deferred()
+	
+	if not element in _update_queue:
+		_update_queue.append(element)
+
+func _update_queued():
+	for cell in _update_queue:
+		cell.update()
+	_update_queue.clear()
+
+func _update_all_with_mapped():
+	for cell: CellView in _cache.values():
+		cell._force_mapped = _force_mapped
+		cell.update()
+
+class CustomElementInstance:
+	var canvas_item: RID
+	var coords: Vector3i
+	var offset: Vector2
+	var base_element: CustomElement
+	
+	func _init(parent_item: RID) -> void:
+		canvas_item = RenderingServer.canvas_item_create()
+		RenderingServer.canvas_item_set_parent(canvas_item, parent_item)
+		RenderingServer.canvas_item_set_z_index(canvas_item, 3)
+	
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_PREDELETE:
+			RenderingServer.free_rid(canvas_item)
+			canvas_item = RID()
+	
+	func update():
+		RenderingServer.canvas_item_clear(canvas_item)
+		
+		var size := base_element.size
+		var element_rect := Rect2i(coords.x, coords.y, size.x, size.y)
+		MetSys.settings.custom_elements.draw_element(canvas_item, coords, base_element.name, offset, Vector2(element_rect.size) * MetSys.CELL_SIZE, base_element.data)
