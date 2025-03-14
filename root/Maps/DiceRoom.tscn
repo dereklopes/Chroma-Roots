@@ -226,8 +226,8 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_txane"]
 _data = {
-"RESET": SubResource("Animation_g16o2"),
-"Spin": SubResource("Animation_7j2ql")
+&"RESET": SubResource("Animation_g16o2"),
+&"Spin": SubResource("Animation_7j2ql")
 }
 
 [node name="Map" type="Node2D"]

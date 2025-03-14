@@ -1,6 +1,6 @@
 [gd_scene load_steps=11 format=3 uid="uid://c3xqaietfgs7l"]
 
-[ext_resource type="Script" path="res://root/Scripts/Game.gd" id="1_xdpfu"]
+[ext_resource type="Script" uid="uid://ble8lmjrask1y" path="res://root/Scripts/Game.gd" id="1_xdpfu"]
 [ext_resource type="PackedScene" uid="uid://xpbhai8nlgtx" path="res://root/Player.tscn" id="2_bam1a"]
 [ext_resource type="PackedScene" uid="uid://dch8dyylb7526" path="res://addons/MetroidvaniaSystem/Template/Nodes/Minimap.tscn" id="3_a3gfy"]
 [ext_resource type="Texture2D" uid="uid://wiq0mic5m6is" path="res://root/Sprites/Collectible.png" id="3_kng3d"]
@@ -46,8 +46,8 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_kkw8m"]
 _data = {
-"Flash": SubResource("Animation_lgykt"),
-"RESET": SubResource("Animation_0p0d4")
+&"Flash": SubResource("Animation_lgykt"),
+&"RESET": SubResource("Animation_0p0d4")
 }
 
 [sub_resource type="GDScript" id="GDScript_u7odr"]
@@ -188,7 +188,7 @@ script = SubResource("GDScript_kcm6q")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="UI/Minimap/PlayerIndicator"]
 libraries = {
-"": SubResource("AnimationLibrary_kkw8m")
+&"": SubResource("AnimationLibrary_kkw8m")
 }
 autoplay = "Flash"
 

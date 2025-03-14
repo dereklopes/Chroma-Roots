@@ -61,8 +61,8 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_xn1en"]
 _data = {
-"Lava": SubResource("Animation_2oy6n"),
-"RESET": SubResource("Animation_u17jm")
+&"Lava": SubResource("Animation_2oy6n"),
+&"RESET": SubResource("Animation_u17jm")
 }
 
 [node name="Map" type="Node2D"]

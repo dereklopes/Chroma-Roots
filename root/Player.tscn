@@ -1,6 +1,6 @@
 [gd_scene load_steps=20 format=3 uid="uid://xpbhai8nlgtx"]
 
-[ext_resource type="Script" path="res://root/Scripts/Player.gd" id="1_ecbsx"]
+[ext_resource type="Script" uid="uid://c0uju1d8al1nq" path="res://root/Scripts/Player.gd" id="1_ecbsx"]
 [ext_resource type="Texture2D" uid="uid://c3v5jdyj2jl4e" path="res://root/Sprites/MC.png" id="1_qiynj"]
 [ext_resource type="PackedScene" uid="uid://dnabudufp3hnk" path="res://root/Objects/Grapple.tscn" id="3_li6f2"]
 [ext_resource type="Texture2D" uid="uid://hh8pnyjg60nm" path="res://root/Sprites/Player_Concept_3.png" id="4_57jh0"]
@@ -91,11 +91,11 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_rqeoy"]
 _data = {
-"Fall": SubResource("Animation_mul1d"),
-"Idle": SubResource("Animation_76fpo"),
-"Jump": SubResource("Animation_58w5b"),
-"RESET": SubResource("Animation_owew4"),
-"Run": SubResource("Animation_l0tvd")
+&"Fall": SubResource("Animation_mul1d"),
+&"Idle": SubResource("Animation_76fpo"),
+&"Jump": SubResource("Animation_58w5b"),
+&"RESET": SubResource("Animation_owew4"),
+&"Run": SubResource("Animation_l0tvd")
 }
 
 [sub_resource type="Animation" id="Animation_p6pc7"]
@@ -132,8 +132,8 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_vi5uk"]
 _data = {
-"Idle": SubResource("Animation_p6pc7"),
-"RESET": SubResource("Animation_0s5w2")
+&"Idle": SubResource("Animation_p6pc7"),
+&"RESET": SubResource("Animation_0s5w2")
 }
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_jrhwx"]
@@ -179,7 +179,7 @@ vframes = 2
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
-"": SubResource("AnimationLibrary_rqeoy")
+&"": SubResource("AnimationLibrary_rqeoy")
 }
 
 [node name="Grapple" parent="." instance=ExtResource("3_li6f2")]
@@ -193,7 +193,7 @@ hframes = 12
 
 [node name="ConceptAnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
-"": SubResource("AnimationLibrary_vi5uk")
+&"": SubResource("AnimationLibrary_vi5uk")
 }
 autoplay = "Idle"
 
@@ -202,10 +202,10 @@ visible = false
 material = SubResource("CanvasItemMaterial_jrhwx")
 position = Vector2(0, 39)
 amount = 10
-process_material = SubResource("ParticleProcessMaterial_6kshc")
 texture = ExtResource("5_8u1gy")
 lifetime = 5.0
 preprocess = 15.0
 speed_scale = 0.5
 randomness = 0.25
 local_coords = true
+process_material = SubResource("ParticleProcessMaterial_6kshc")

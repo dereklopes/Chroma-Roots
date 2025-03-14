@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3 uid="uid://vmh4xrfha0i0"]
 
 [ext_resource type="Texture2D" uid="uid://wcece7d1sybd" path="res://root/Sprites/snowflakes.png" id="1_25yum"]
-[ext_resource type="Script" path="res://root/Scripts/IceClone.gd" id="1_848ic"]
+[ext_resource type="Script" uid="uid://r8y2qqlla4nu" path="res://root/Scripts/IceClone.gd" id="1_848ic"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_nonyf"]
 height = 62.0
@@ -50,10 +50,10 @@ debug_color = Color(0.364706, 0.478431, 1, 0.419608)
 material = SubResource("CanvasItemMaterial_4fpe2")
 position = Vector2(0, 15)
 amount = 50
-process_material = SubResource("ParticleProcessMaterial_upr3l")
 texture = ExtResource("1_25yum")
 lifetime = 3.0
 preprocess = 6.0
+process_material = SubResource("ParticleProcessMaterial_upr3l")
 
 [node name="DespawnTimer" type="Timer" parent="."]
 wait_time = 5.0

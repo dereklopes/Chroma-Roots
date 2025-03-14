@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://cwrf84g5mlucd"]
 
-[ext_resource type="Script" path="res://root/Scripts/Portal.gd" id="1_q6xcx"]
+[ext_resource type="Script" uid="uid://owfah17ox170" path="res://root/Scripts/Portal.gd" id="1_q6xcx"]
 [ext_resource type="Texture2D" uid="uid://cargdawan7gao" path="res://root/Sprites/Portal.png" id="2_j5rn3"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vq33u"]
@@ -40,8 +40,8 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_0plid"]
 _data = {
-"RESET": SubResource("Animation_bkyt7"),
-"Rotat": SubResource("Animation_g3r3d")
+&"RESET": SubResource("Animation_bkyt7"),
+&"Rotat": SubResource("Animation_g3r3d")
 }
 
 [node name="Portal" type="Area2D"]

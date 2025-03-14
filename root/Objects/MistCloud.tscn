@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3 uid="uid://23fxt8ictjf2"]
 
 [ext_resource type="Texture2D" uid="uid://dx2cwjqvq1gbj" path="res://root/Sprites/mist.png" id="1_hgi5h"]
-[ext_resource type="Script" path="res://root/Scripts/MistCloud.gd" id="1_rtmc6"]
+[ext_resource type="Script" uid="uid://c5jy1h8d82tdk" path="res://root/Scripts/MistCloud.gd" id="1_rtmc6"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6nkr7"]
 blend_mode = 1

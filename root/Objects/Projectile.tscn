@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://wxqlxsim3yly"]
 
-[ext_resource type="Script" path="res://root/Scripts/Projectile.gd" id="1_1ybs4"]
+[ext_resource type="Script" uid="uid://bxfa0axr0tqy3" path="res://root/Scripts/Projectile.gd" id="1_1ybs4"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_jv1nt"]
 

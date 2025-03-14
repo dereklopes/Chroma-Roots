@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://dnabudufp3hnk"]
 
 [ext_resource type="PackedScene" uid="uid://wxqlxsim3yly" path="res://root/Objects/Projectile.tscn" id="1_64nin"]
-[ext_resource type="Script" path="res://root/Scripts/Grapple.gd" id="2_mtis4"]
+[ext_resource type="Script" uid="uid://3fgur5or8s3e" path="res://root/Scripts/Grapple.gd" id="2_mtis4"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_w50de"]
 radius = 0.01
