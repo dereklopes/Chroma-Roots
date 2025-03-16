@@ -7,6 +7,7 @@ extends CharacterBody2D
 @onready var collision_shape_2d: CollisionShape2D = $CollisionShape2D
 @onready var mist_particles_2d: GPUParticles2D = $MistParticles2D
 @onready var ice_clone_scene: PackedScene = preload("res://root/Objects/IceClone.tscn")
+@onready var fireball_scene: PackedScene = preload("res://root/Objects/Fireball.tscn")
 
 const JUMP_FORCE = 500			# Force applied on jumping
 const MOVE_SPEED = 500			# Speed to walk with
@@ -42,6 +43,13 @@ func _physics_process(delta: float) -> void:
 
 	if Input.is_action_just_pressed("power_2"):
 		is_mist = !is_mist
+		
+	if Input.is_action_just_pressed("power_4"):
+		var fireball = fireball_scene.instantiate()
+		fireball.global_position = global_position
+		fireball.init(velocity)  # Pass the player's current velocity
+		fireball.set_direction(sprite.flip_h)
+		get_parent().add_child(fireball)
 		
 	if is_mist:
 		mist_particles_2d.visible = true
